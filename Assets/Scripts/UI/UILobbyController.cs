@@ -17,13 +17,24 @@ public class UILobbyController : MonoBehaviourPunCallbacks
     [SerializeField] private Transform parentRoomList = null;
     private List<UIRoomPreview> roomPreviewList = new List<UIRoomPreview>();
 
+    [Header("Custom properties")]
+    [SerializeField] private UICustomProperties customPropertiesGenerator = null;
+
     public void SetActive(bool state)
     {
+        if (state) {
+            //clean list
+            parentRoomList.DestroyChildren();
+            roomPreviewList.Clear();
+        }
+
         this.gameObject.SetActive(state);
     }
 
     public void Setup()
     {
+        customPropertiesGenerator.Setup();
+
         joinOrCreateRoomBtn.onClick.AddListener(JoinOrCreateRoom);
         SetActive(false);
     }
@@ -33,7 +44,10 @@ public class UILobbyController : MonoBehaviourPunCallbacks
         if (PhotonNetwork.IsConnected) //the player is connected
         {
             PhotonNetwork.JoinOrCreateRoom(roomNameField.text,
-                new RoomOptions { MaxPlayers = NetworkManager.MAX_PLAYERS_PER_ROOM }, TypedLobby.Default);
+                new RoomOptions { 
+                    MaxPlayers = NetworkManager.MAX_PLAYERS_PER_ROOM ,
+                    BroadcastPropsChangeToAll = true, //to synchronize custom properties changes
+                }, TypedLobby.Default);
         }
         else
         {
@@ -48,10 +62,8 @@ public class UILobbyController : MonoBehaviourPunCallbacks
             if (roomInfo.RemovedFromList)
             {
                 //remove from list
-                int idxRemoved = newRoomList.FindIndex(room => room.Name == roomInfo.Name);
-
-                if(idxRemoved != -1)
-                {
+                int idxRemoved = roomPreviewList.FindIndex(room => room.RoomInfo.Name == roomInfo.Name);
+                if(idxRemoved != -1) {
                     Destroy(roomPreviewList[idxRemoved].gameObject);
                     roomPreviewList.RemoveAt(idxRemoved);
                 }
@@ -59,11 +71,14 @@ public class UILobbyController : MonoBehaviourPunCallbacks
             else
             {
                 //add to list
-                UIRoomPreview UIPreview = Instantiate(templateRoomPreview, parentRoomList);
-                if(UIPreview != null)
+                int idxCurrent = roomPreviewList.FindIndex(room => room.RoomInfo.Name == roomInfo.Name);
+                if(idxCurrent == -1)
                 {
-                    UIPreview.SetupRoomInfo(roomInfo);
-                    roomPreviewList.Add(UIPreview);
+                    UIRoomPreview UIPreview = Instantiate(templateRoomPreview, parentRoomList);
+                    if (UIPreview != null) {
+                        UIPreview.SetupRoomInfo(roomInfo);
+                        roomPreviewList.Add(UIPreview);
+                    }
                 }
             }
         }
@@ -82,7 +97,7 @@ public class UILobbyController : MonoBehaviourPunCallbacks
 
     public override void OnRoomListUpdate(List<RoomInfo> newRoomList)
     {
-        Debug.Log("Room list updated");
+        Debug.Log("Room list updated " + newRoomList.Count);
         UpdateRoomPreviewList(newRoomList);
     }
 

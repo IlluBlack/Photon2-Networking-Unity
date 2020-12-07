@@ -12,6 +12,8 @@ public class NetworkManager : MonoBehaviourPunCallbacks
     public const string GAME_VERSION = "0.1"; //Just players with same version can play together
     public const int MAX_PLAYERS_PER_ROOM = 4;
 
+    public const string KEY_RANDOM_PROPERTY = "RandomNumber";
+
     private void Awake()
     {
         if (Instance != null)
@@ -28,6 +30,7 @@ public class NetworkManager : MonoBehaviourPunCallbacks
     {
         PhotonNetwork.NickName = nickName;
         Debug.Log("Client nickname setted to " + nickName);
+        PhotonNetwork.AutomaticallySyncScene = true; //if master client loads scene, then all load the scene
 
         Debug.Log("Connecting to server");
         PhotonNetwork.GameVersion = GAME_VERSION;
@@ -53,9 +56,13 @@ public class NetworkManager : MonoBehaviourPunCallbacks
         PhotonNetwork.JoinRoom(name);
     }*/
 
-    public void ChangeScene(string name)
+    public static void LoadScene(int idx)
     {
-        PhotonNetwork.LoadLevel(name);
+        if (PhotonNetwork.IsMasterClient) {
+            PhotonNetwork.CurrentRoom.IsOpen = false;
+            //PhotonNetwork.CurrentRoom.IsVisible = false;
+            PhotonNetwork.LoadLevel(idx);
+        }
     }
 
 }

@@ -47,8 +47,11 @@ public class UIServerController : MonoBehaviourPunCallbacks
     {
         Debug.Log("Client connected to master server " + PhotonNetwork.LocalPlayer.NickName);
 
-        //you have to be in a lobby to get the room list update
-        PhotonNetwork.JoinLobby(); //uses the default lobby
+        //when you leave a room this is called, verify 
+        if (!PhotonNetwork.InLobby) {
+            //you have to be in a lobby to get the room list update
+            PhotonNetwork.JoinLobby(); //uses the default lobby
+        }
     }
     public override void OnJoinedLobby()
     {
@@ -63,6 +66,13 @@ public class UIServerController : MonoBehaviourPunCallbacks
 
         _lobbyController.SetActive(false);
         _roomController.SetActive(true);
+    }
+    public override void OnLeftRoom()
+    {
+        Debug.Log($"Client left the room ");
+
+        _lobbyController.SetActive(true);
+        _roomController.SetActive(false);
     }
 
 
